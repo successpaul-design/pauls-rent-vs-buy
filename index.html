@@ -1,0 +1,1835 @@
+For 4.1 <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Rent vs. Buy (For Us) + Keep as Rental Asset</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+<!-- PWA / Install polish -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2563eb">
+
+<!-- iOS install support -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Paul's Rent vs Buy">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<!-- iOS + general icons -->
+<link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
+  <style>
+    :root {
+      --bg:#f5f5f7; --card:#ffffff; --border:#d1d5db;
+      --text:#111827; --muted:#4b5563; --accent:#3b82f6; --accentSoft:#e5f0ff;
+      --shadow:0 12px 30px rgba(15,23,42,.08);
+      --r:16px; --r2:10px; --font:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);line-height:1.5}
+    header{max-width:1100px;margin:0 auto;padding:1.5rem 1rem .6rem}
+    h1{margin:0 0 .4rem;font-size:1.6rem}
+    .sub{margin:0;color:var(--muted);max-width:850px;font-size:.95rem}
+    main{max-width:1100px;margin:0 auto;padding:0 1rem 2.5rem}
+    .app{display:grid;grid-template-columns:minmax(280px,360px) minmax(0,1fr);gap:1.25rem;align-items:start}
+    .sidebar{position:sticky;top:12px;align-self:start}
+    .content{min-width:0}
+    @media(max-width:900px){
+      .app{grid-template-columns:1fr}
+      .sidebar{position:static}
+    }
+    .card{
+      background:var(--card); border:1px solid rgba(148,163,184,.35);
+      border-radius:var(--r); box-shadow:var(--shadow); padding:1.1rem 1.2rem
+    }
+    .label{font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:.2rem}
+    h2{margin:.1rem 0 .75rem;font-size:1.05rem}
+    h3{margin:1rem 0 .4rem;font-size:1rem}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.7rem 1rem}
+    .field{display:flex;flex-direction:column;gap:.15rem}
+    label{font-size:.86rem;font-weight:500}
+    input[type="number"], select{
+      width:100%; padding:.45rem .55rem; border-radius:var(--r2);
+      border:1px solid var(--border); font-size:.92rem; background:#fff;
+    }
+    input:focus, select:focus, button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+    .help{font-size:.76rem;color:var(--muted)}
+    .row{display:flex;gap:.55rem;flex-wrap:wrap;align-items:center;margin-top:.8rem}
+    button{
+      border:none;border-radius:999px;padding:.45rem .9rem;font-size:.9rem;cursor:pointer;
+      background:var(--accent);color:#fff;box-shadow:0 6px 16px rgba(37,99,235,.25);
+    }
+    button.secondary{background:transparent;color:var(--muted);border:1px solid var(--border);box-shadow:none}
+    button.secondary:hover{background:#eef2ff}
+    .pill{display:inline-flex;align-items:center;padding:.15rem .6rem;border-radius:999px;background:var(--accentSoft);color:var(--accent);font-size:.75rem;font-weight:600}
+    .inner-card{
+      margin-top:1rem; background:#f9fafb; border:1px dashed rgba(148,163,184,.85);
+      border-radius:var(--r); padding:.85rem .95rem
+    }
+    .kpiGrid{display:grid;grid-template-columns:1fr;gap:.55rem;margin-top:.6rem}
+    .kpi{
+      background:#f9fafb; border:1px dashed rgba(148,163,184,.85);
+      border-radius:var(--r); padding:.75rem .85rem
+    }
+    .kpi .t{margin:0;color:var(--muted);font-size:.78rem}
+    .kpi .v{margin:.1rem 0 0;font-weight:800;font-size:1.15rem}
+    .kpi .s{margin:.15rem 0 0;color:var(--muted);font-size:.78rem}
+    .barTrack{height:10px;background:#e5e7eb;border-radius:999px;overflow:hidden;margin-top:.45rem}
+    .barFill{height:100%;border-radius:999px;background:linear-gradient(90deg,#3b82f6,#1e40af);transition:width .25s ease}
+    .barFill.rent{background:linear-gradient(90deg,#10b981,#047857)}
+    .advanced{display:none;margin-top:.75rem;padding-top:.75rem;border-top:1px solid rgba(148,163,184,.35)}
+    .advanced.visible{display:block}
+    .note{margin-top:.8rem;color:var(--muted);font-size:.82rem}
+
+    /* ========= TABLE FIX ========= */
+    .tableWrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+    table{width:100%;border-collapse:collapse;margin-top:.75rem;font-size:.85rem;table-layout:fixed;}
+    th,td{padding:.4rem .35rem;border-bottom:1px solid rgba(209,213,219,.8);text-align:right;vertical-align:top;}
+    th:first-child,td:first-child{text-align:left;padding-left:0;white-space:normal;word-break:break-word;}
+    td:not(:first-child), th:not(:first-child){white-space:nowrap;}
+    td.wrap, th.wrap{white-space:normal !important;word-break:break-word;}
+    /* ========= END TABLE FIX ========= */
+
+    .exportRow{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.75rem}
+    .exportRow button{background:transparent;color:var(--text);border:1px solid var(--border);box-shadow:none}
+    .exportRow button:hover{background:#eef2ff}
+  
+    /* ========= TABS ========= */
+    .tabs{max-width:1100px;margin:0 auto;padding:0 1rem 1rem;display:flex;flex-wrap:wrap;gap:.5rem}
+    .tab{border:1px solid rgba(209,213,219,.9);background:#fff;color:var(--muted);padding:.45rem .8rem;border-radius:999px;cursor:pointer;font-size:.9rem}
+    .tab.active{border-color:rgba(59,130,246,.45);color:var(--text);box-shadow:0 8px 18px rgba(37,99,235,.10)}
+    .hidden{display:none !important}
+
+</style>
+
+  <!-- PDF export only: allowed single CDN dependency -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
+          crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+</head>
+
+<body>
+<header>
+  <h1>Rent vs. Buy (For Us) + “Keep It As a Rental” Option</h1>
+  <p class="sub">
+    Model our plan: buy, live in it for a few years, then rent it out and hold it as an asset.
+    Uses today’s inputs only. No data is stored.
+  </p>
+</header>
+
+  <nav class="tabs" aria-label="Navigation tabs">
+    <button class="tab active" type="button" data-tab="dashboard" aria-selected="true">Dashboard</button>
+    <button class="tab" type="button" data-tab="assumptions" aria-selected="false">Assumptions</button>
+    <button class="tab" type="button" data-tab="rentalAsset" aria-selected="false">Rental asset mode</button>
+    <button class="tab" type="button" data-tab="mortgage" aria-selected="false">Mortgage snapshot</button>
+    <button class="tab" type="button" data-tab="payoff" aria-selected="false">Payoff accelerator</button>
+    <button class="tab" type="button" data-tab="rentCosts" aria-selected="false">Rent costs</button>
+  </nav>
+
+
+
+<main>
+  <div class="app">
+    <aside class="sidebar" aria-label="Core inputs">
+      <section class="card">
+        
+      <div class="label">Basic inputs</div>
+      <h2>Today’s numbers</h2>
+
+      <div class="grid">
+        <div class="field">
+          <label for="homePrice">Home price if we buy ($)</label>
+          <input id="homePrice" type="number" min="0" step="1000" />
+          <div class="help">Purchase price we’re considering.</div>
+        </div>
+
+        <div class="field">
+          <label for="monthlyRent">Monthly rent if we rent ($)</label>
+          <input id="monthlyRent" type="number" min="0" step="50" />
+          <div class="help">Rent for a similar place, today.</div>
+        </div>
+
+        <div class="field">
+          <label for="yearsTotal">Total analysis horizon (years)</label>
+          <input id="yearsTotal" type="number" min="1" step="0.5" />
+          <div class="help">How long we want to compare money outcomes.</div>
+        </div>
+
+        <div class="field">
+          <label for="yearsLiveIn">Years we live in the home first</label>
+          <input id="yearsLiveIn" type="number" min="0.5" step="0.5" />
+          <div class="help">Example: 3 years. Then convert to rental.</div>
+        </div>
+
+        <div class="field">
+          <label for="mortgageRate">Mortgage rate (annual %)</label>
+          <input id="mortgageRate" type="number" min="0" step="0.01" />
+          <div class="help">Enter today’s best realistic fixed rate.</div>
+        </div>
+
+        <div class="field">
+          <label for="mortgageYears">Mortgage length (years)</label>
+          <input id="mortgageYears" type="number" min="5" step="5" />
+        </div>
+
+        <div class="field">
+          <label>Down payment</label>
+          <div style="display:flex;gap:.5rem">
+            <div style="flex:1">
+              <input id="downPct" type="number" min="0" max="100" step="0.5" />
+              <div class="help">% of price</div>
+            </div>
+            <div style="flex:1">
+              <input id="downAmt" type="number" min="0" step="1000" />
+              <div class="help">$ amount</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="creditProfile">Credit profile (PMI estimate)</label>
+          <select id="creditProfile">
+            <option value="excellent">Excellent (760+)</option>
+            <option value="good">Good (700–759)</option>
+            <option value="fair">Fair (640–699)</option>
+          </select>
+          <div class="help">Used only to estimate PMI if down payment &lt; 20%.</div>
+        </div>
+      </div>
+
+      
+        <div id="advButtons" class="row">
+          <button id="toggleAdv" class="secondary" type="button">Assumptions</button>
+          <button id="resetBtn" class="secondary" type="button">Reset defaults</button>
+        
+          <div class="persistRow" style="margin-top:.6rem;display:flex;flex-direction:column;gap:.4rem">
+            <label style="display:flex;align-items:center;gap:.5rem;font-size:.9rem;color:var(--muted)">
+              <input id="rememberToggle" type="checkbox" />
+              Remember my inputs on this device
+            </label>
+            <button id="clearSavedBtn" class="secondary" type="button" style="align-self:flex-start">Forget saved data</button>
+            <div id="savedStatus" style="font-size:.78rem;color:var(--muted)"></div>
+          </div>
+</div>
+      </section>
+    </aside>
+
+    <section class="content" aria-label="Tab content">
+      <section id="resultsSection" class="card" aria-label="Results">
+      <div class="label">Results</div>
+      <h2>Buying vs renting: including rental asset cash flow</h2>
+
+      <div class="kpiGrid">
+        <div class="kpi">
+          <p class="t">Verdict</p>
+          <p class="v" id="verdict">–</p>
+          <p class="s" id="verdictSub">–</p>
+        </div>
+        <div class="kpi">
+          <p class="t">Buy scenario: total wealth impact</p>
+          <p class="v" id="buyTotal">–</p>
+          <p class="s" id="buySub">–</p>
+        </div>
+        <div class="kpi">
+          <p class="t">Rent scenario: total wealth impact</p>
+          <p class="v" id="rentTotal">–</p>
+          <p class="s" id="rentSub">–</p>
+        </div>
+      </div>
+
+      <div class="help" style="margin-top:.7rem">
+        Lower total wealth impact is better. It includes: initial costs + recurring costs + opportunity cost − net proceeds − tax benefits − net rental cash flow (if applicable).
+      </div>
+
+      <div class="barTrack"><div id="barBuy" class="barFill" style="width:50%"></div></div>
+      <div class="barTrack"><div id="barRent" class="barFill rent" style="width:50%"></div></div>
+
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Buy</th>
+              <th>Rent</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Initial costs</td><td id="buyInit">–</td><td id="rentInit">–</td></tr>
+            <tr><td>Recurring costs (housing + ops)</td><td id="buyRec">–</td><td id="rentRec">–</td></tr>
+            <tr><td>Tax benefits (simplified)</td><td id="buyTax">–</td><td>n/a</td></tr>
+            <tr><td>Opportunity cost of cash spent</td><td id="buyOpp">–</td><td id="rentOpp">–</td></tr>
+            <tr><td>Net rental cash flow (after move-out)</td><td id="buyRentCF">–</td><td>n/a</td></tr>
+            <tr>
+              <td>Net proceeds (sale or keep-value)</td>
+              <td id="buyProceeds" class="wrap">–</td>
+              <td id="rentProceeds">–</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr><td>Total wealth impact</td><td id="buyTotalTbl">–</td><td id="rentTotalTbl">–</td></tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <p class="note" id="modeNote">–</p>
+
+      <!-- EXPORT -->
+      <div class="inner-card" aria-label="Export">
+        <div class="label">Snapshot only</div>
+        <p class="help">
+          When we like a scenario, export it for our records (or to discuss with an advisor).
+        </p>
+        <div class="exportRow">
+          <button id="exportTxt" type="button">Export as .txt</button>
+          <button id="exportDoc" type="button">Export as .doc</button>
+          <button id="exportPdf" type="button">Export as .pdf</button>
+        </div>
+        <p class="note">
+          Export includes: all inputs (basic + advanced), rental assumptions, and key result numbers.
+        </p>
+      </div>
+    </section>
+
+      <section class="card hidden" id="assumptionsPanel" aria-label="Assumptions">
+        <div class="label">Assumptions</div>
+        <h2>Advanced assumptions</h2>
+        <div id="adv" class="advanced" aria-hidden="true">
+        <div class="label">Advanced assumptions</div>
+      </section>
+
+      <section class="card hidden" id="rentalBlock" aria-label="Rental asset mode">
+        
+        <div class="label">Rental asset mode</div>
+
+        <div class="field" style="margin-top:.25rem">
+          <label for="enableRentalMode">After we move out, keep the home as a rental?</label>
+          <select id="enableRentalMode">
+            <option value="yes">Yes, rent it out and hold it</option>
+            <option value="no">No, assume we sell when we move out</option>
+          </select>
+          <div class="help">
+            If “Yes”, the model adds rental income and landlord expenses after <span class="pill">Years we live in</span>.
+          </div>
+        </div>
+
+        <h3 style="margin-top:.8rem">Rental assumptions (only used if “Yes”)</h3>
+        <div class="grid">
+          <div class="field">
+            <label for="rentOutMonthly">Starting monthly rent when rented out ($)</label>
+            <input id="rentOutMonthly" type="number" min="0" step="50" />
+            <div class="help">What we think market rent will be at conversion.</div>
+          </div>
+
+          <div class="field">
+            <label for="vacancyRate">Vacancy/collection loss (% of rent)</label>
+            <input id="vacancyRate" type="number" min="0" max="50" step="0.5" />
+            <div class="help">Example: 5% for vacancies and non-payment.</div>
+          </div>
+
+          <div class="field">
+            <label for="mgmtRate">Property management (% of collected rent)</label>
+            <input id="mgmtRate" type="number" min="0" max="20" step="0.5" />
+            <div class="help">Set to 0 if self-managing.</div>
+          </div>
+
+          <div class="field">
+            <label for="landlordInsAnnual">Landlord insurance (annual $)</label>
+            <input id="landlordInsAnnual" type="number" min="0" step="50" />
+          </div>
+
+          <div class="field">
+            <label for="repairsRateRental">Repairs/CapEx reserve (% of home value per year)</label>
+            <input id="repairsRateRental" type="number" min="0" step="0.1" />
+            <div class="help">Separate from “maintenance” while living there.</div>
+          </div>
+
+          <div class="field">
+            <label for="rentOutGrowth">Rental income growth (annual %)</label>
+            <input id="rentOutGrowth" type="number" step="0.25" />
+          </div>
+        </div>
+
+        <p class="help" style="margin-top:.6rem">
+          This is intentionally simple. Net rental cash flow offsets total cost. We can add income tax, depreciation,
+          and more landlord categories later if you want.
+        </p>
+      
+      </section>
+
+      <section class="card hidden" id="mortgageSnapshotBlock" aria-label="Mortgage snapshot">
+        
+        <div class="label">Mortgage snapshot</div>
+        <div class="help" style="margin-bottom:.45rem">Estimated starting monthly payment for owning, based on today’s inputs.</div>
+        <div class="grid">
+          <div class="field"><label>Loan amount</label><div class="help" id="mLoan">–</div></div>
+          <div class="field"><label>Principal & interest</label><div class="help" id="mPI">–</div></div>
+          <div class="field"><label>Mortgage insurance (PMI)</label><div class="help" id="mPMI">–</div></div>
+          <div class="field"><label>Property tax (est.)</label><div class="help" id="mPropTax">–</div></div>
+          <div class="field"><label>Homeowner’s insurance</label><div class="help" id="mHomeIns">–</div></div>
+          <div class="field"><label>HOA / condo fees</label><div class="help" id="mHOA">–</div></div>
+          <div class="field"><label>Extra utilities (owning)</label><div class="help" id="mUtils">–</div></div>
+          <div class="field"><label>Total monthly housing</label><div class="help" id="mTotal"><strong>–</strong></div></div>
+        </div>
+        <p class="note">
+          PMI is only included while our loan is above about 78% of the home’s value. Maintenance is separate.
+        </p>
+
+        
+
+      
+      </section>
+
+      <section class="card hidden" id="payoffBlock" aria-label="Payoff accelerator">
+        
+          <div class="label">Payoff accelerator</div>
+          <div class="help" style="margin-bottom:.45rem">
+            This does not change the Buy vs Rent results yet. It’s a quick side calculator to see how extra payments change payoff time and interest.
+          </div>
+
+          <div class="grid">
+            <div class="field">
+              <label for="extraPrinMonthly">Extra principal (monthly $)</label>
+              <input id="extraPrinMonthly" type="number" min="0" step="25" />
+              <div class="help">Adds $X to principal every month.</div>
+            </div>
+
+            <div class="field">
+              <label for="extraPaysPerYear">Extra full payments per year</label>
+              <input id="extraPaysPerYear" type="number" min="0" step="1" />
+              <div class="help">Example: 1 = one extra payment each year.</div>
+            </div>
+
+            <div class="field">
+              <label for="extraPaysPerMonth">Extra full payments per month</label>
+              <input id="extraPaysPerMonth" type="number" min="0" step="1" />
+              <div class="help">Example: 1 = double-payment every month.</div>
+            </div>
+          </div>
+
+          <div class="tableWrap" style="margin-top:.6rem">
+            <table>
+              <thead>
+                <tr>
+                  <th>Scenario</th>
+                  <th>Payoff time</th>
+                  <th>Interest paid</th>
+                  <th>Time saved</th>
+                  <th>Interest saved</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Standard</td>
+                  <td id="poBaseTime">–</td>
+                  <td id="poBaseInt">–</td>
+                  <td>–</td>
+                  <td>–</td>
+                </tr>
+                <tr>
+                  <td>Extra monthly principal</td>
+                  <td id="poMonthlyTime">–</td>
+                  <td id="poMonthlyInt">–</td>
+                  <td id="poMonthlyTimeSaved">–</td>
+                  <td id="poMonthlyIntSaved">–</td>
+                </tr>
+                <tr>
+                  <td>Extra payments per year</td>
+                  <td id="poYearTime">–</td>
+                  <td id="poYearInt">–</td>
+                  <td id="poYearTimeSaved">–</td>
+                  <td id="poYearIntSaved">–</td>
+                </tr>
+                <tr>
+                  <td>Extra payments per month</td>
+                  <td id="poMonthTime">–</td>
+                  <td id="poMonthInt">–</td>
+                  <td id="poMonthTimeSaved">–</td>
+                  <td id="poMonthIntSaved">–</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p class="note">
+            “Extra full payment” uses the current base principal+interest payment amount as the extra lump sum.
+            This ignores escrow and assumes extra money goes to principal.
+          </p>
+        
+      </section>
+
+      <section class="card hidden" id="rentCostsBlock" aria-label="Rent costs calculator">
+        
+        <div class="label">Rent costs builder</div>
+        <div class="help" style="margin-bottom:.45rem">
+          Add up the real cost of renting beyond base rent: upfront move-in cash plus monthly add-ons.
+          Uses the <span class="pill">Monthly rent</span> and <span class="pill">Horizon</span> from the basic inputs.
+        </div>
+
+        <h3 style="margin-top:.6rem">Upfront / move-in costs</h3>
+        <div class="grid">
+          <div class="field">
+            <label for="rentFirstMonth">First month rent due at signing?</label>
+            <select id="rentFirstMonth">
+              <option value="yes">Yes</option>
+              <option value="no">No</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="rentLastMonth">Last month rent due at signing?</label>
+            <select id="rentLastMonth">
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="rentDepositMonths">Security deposit (months of rent)</label>
+            <input id="rentDepositMonths" type="number" min="0" step="0.25" />
+            <div class="help">Example: 1.0 means one month of rent held as deposit.</div>
+          </div>
+
+          <div class="field">
+            <label for="rentBrokerPct">Broker fee (% of annual rent)</label>
+            <input id="rentBrokerPct" type="number" min="0" step="0.25" />
+          </div>
+
+          <div class="field">
+            <label for="rentAppFees">Application / admin fees ($)</label>
+            <input id="rentAppFees" type="number" min="0" step="25" />
+          </div>
+
+          <div class="field">
+            <label for="rentMoveCosts">Moving costs ($)</label>
+            <input id="rentMoveCosts" type="number" min="0" step="50" />
+          </div>
+
+          <div class="field">
+            <label for="rentPetDeposit">Pet deposit (one-time $)</label>
+            <input id="rentPetDeposit" type="number" min="0" step="25" />
+          </div>
+
+          <div class="field">
+            <label for="rentOtherUpfront">Other upfront costs ($)</label>
+            <input id="rentOtherUpfront" type="number" min="0" step="25" />
+          </div>
+        </div>
+
+        <h3 style="margin-top:.9rem">Monthly add-ons (beyond rent)</h3>
+        <div class="grid">
+          <div class="field">
+            <label for="rentUtilities">Utilities (monthly $)</label>
+            <input id="rentUtilities" type="number" min="0" step="10" />
+            <div class="help">Electric, gas, water, trash, internet... whatever applies.</div>
+          </div>
+
+          <div class="field">
+            <label for="rentLandscaping">Landscaping (monthly $)</label>
+            <input id="rentLandscaping" type="number" min="0" step="10" />
+          </div>
+
+          <div class="field">
+            <label for="rentPest">Pest control (monthly $)</label>
+            <input id="rentPest" type="number" min="0" step="5" />
+          </div>
+
+          <div class="field">
+            <label for="rentParking">Parking (monthly $)</label>
+            <input id="rentParking" type="number" min="0" step="5" />
+          </div>
+
+          <div class="field">
+            <label for="rentPetMonthly">Pet rent (monthly $)</label>
+            <input id="rentPetMonthly" type="number" min="0" step="5" />
+          </div>
+
+          <div class="field">
+            <label for="rentStorage">Storage (monthly $)</label>
+            <input id="rentStorage" type="number" min="0" step="10" />
+          </div>
+
+          <div class="field">
+            <label for="rentMiscMonthly">Other monthly costs ($)</label>
+            <input id="rentMiscMonthly" type="number" min="0" step="10" />
+          </div>
+
+          <div class="field">
+            <label for="rentersInsAnnual">Renter’s insurance (annual $)</label>
+            <input id="rentersInsAnnual" type="number" min="0" step="10" />
+          </div>
+        </div>
+
+        <h3 style="margin-top:.9rem">Totals</h3>
+        <div class="grid">
+          <div class="field"><label>Upfront cash needed</label><div class="help" id="rcUpfront">–</div></div>
+          <div class="field"><label>Monthly add-ons (excl. rent)</label><div class="help" id="rcMonthlyAdd">–</div></div>
+          <div class="field"><label>All-in monthly (rent + add-ons)</label><div class="help" id="rcAllInMonthly">–</div></div>
+          <div class="field"><label>Total paid over horizon</label><div class="help" id="rcTotalHorizon">–</div></div>
+        </div>
+
+        <p class="note">
+          Assumptions: deposit is returned at move-out (not counted as a loss), unless you choose to treat it as cost in your judgment.
+          Monthly add-ons are inflated using the <span class="pill">Inflation</span> input, rent grows using <span class="pill">Rent growth</span>.
+        </p>
+      
+      </section>
+    </section>
+  </div>
+</main>
+
+
+<script>
+(() => {
+  "use strict";
+
+  const CONFIG = {
+    currency: "USD",
+    defaults: {
+      homePrice: 650000,
+      monthlyRent: 3200,
+      yearsTotal: 5,
+      yearsLiveIn: 3,
+      mortgageRate: 6.5,
+      mortgageYears: 30,
+      downPct: 3,
+      creditProfile: "good",
+
+      enableRentalMode: "yes",
+      rentOutMonthly: 3600,
+      vacancyRate: 5,
+      mgmtRate: 8,
+      landlordInsAnnual: 1400,
+      repairsRateRental: 1.0,
+      rentOutGrowth: 3.0,
+
+      homeGrowth: 3.0,
+      rentGrowth: 3.0,
+      investReturn: 6.0,
+      inflation: 2.5,
+
+      propTaxRate: 1.1,
+      maintRate: 1.0,
+      homeInsAnnual: 1500,
+      hoaMonthly: 0,
+      extraOwnUtils: 100,
+      extraRentUtils: 25,
+
+      buyClosePct: 3.0,
+      sellCostPct: 6.0,
+
+      filing: "joint",
+      margTax: 24,
+      stdDedJoint: 30000,
+      stdDedIndividual: 15000,
+      stdDed: 30000,
+      otherItemized: 0,
+
+      // Payoff accelerator (side calc only)
+      extraPrinMonthly: 0,
+      extraPaysPerYear: 0,
+      extraPaysPerMonth: 0,
+
+      // Rent costs builder (side calc)
+      rentFirstMonth: "yes",
+      rentLastMonth: "no",
+      rentDepositMonths: 1,
+      rentBrokerPct: 0,
+      rentAppFees: 0,
+      rentMoveCosts: 0,
+      rentPetDeposit: 0,
+      rentOtherUpfront: 0,
+      rentUtilities: 0,
+      rentLandscaping: 0,
+      rentPest: 0,
+      rentParking: 0,
+      rentPetMonthly: 0,
+      rentStorage: 0,
+      rentMiscMonthly: 0,
+      rentersInsAnnual: 200
+    },
+    pmiRates: { excellent: 0.35, good: 0.60, fair: 1.00 }, // annual % of original loan (simple estimate)
+    pmiDropLtv: 0.78
+    ,storage: { key: "rvb_leftRail_v1", enabledByDefault: true }
+  };
+
+  const fmt0 = new Intl.NumberFormat("en-US", { style:"currency", currency: CONFIG.currency, maximumFractionDigits: 0 });
+  const fmt2 = new Intl.NumberFormat("en-US", { style:"currency", currency: CONFIG.currency, maximumFractionDigits: 2 });
+
+  // Format helpers used across tabs (kept tiny on purpose).
+  function formatCurrency(v){
+    const n = Number(v);
+    return fmt0.format(Number.isFinite(n) ? n : 0);
+  }
+  function formatCurrency2(v){
+    const n = Number(v);
+    return fmt2.format(Number.isFinite(n) ? n : 0);
+  }
+  function formatPercent(v, digits=2){
+    const n = Number(v);
+    return (Number.isFinite(n) ? n : 0).toFixed(digits) + "%";
+  }
+
+  const DUMMY_EL = {
+    value: "",
+    checked: false,
+    textContent: "",
+    innerHTML: "",
+    addEventListener: () => {},
+    setAttribute: () => {},
+    removeAttribute: () => {},
+    focus: () => {},
+    classList: { add: () => {}, remove: () => {}, toggle: () => {} }
+  };
+
+  const el = (id) => document.getElementById(id) || DUMMY_EL;
+  const num = (id, fallback=0) => {
+    const v = parseFloat(el(id).value);
+    return Number.isFinite(v) ? v : fallback;
+  };
+  const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
+  const nowStamp = () => new Date().toISOString().slice(0,19).replace("T"," ");
+
+  function mortgagePayment(principal, annualRatePct, years){
+    const n = Math.round(years * 12);
+    if (n <= 0) return 0;
+    const r = (annualRatePct/100)/12;
+    if (r === 0) return principal / n;
+    const f = Math.pow(1+r, n);
+    return principal * (r*f) / (f-1);
+  }
+
+
+  // --- Payoff Accelerator (side calc only) ---------------------------------
+  // Computes payoff months + total interest for a fixed-rate loan, with optional:
+  // - extra principal added every month
+  // - extra "full payments" (principal+interest amount) either per year or per month
+  // Assumptions:
+  // - Extra money goes to principal only
+  // - Extra "full payment" uses the current base P&I payment amount
+  function amortizePayoff(principal, annualRatePct, years, opts){
+    const o = Object.assign({ extraPrincipalMonthly:0, extraPaymentsPerYear:0, extraPaymentsPerMonth:0 }, opts||{});
+    const nMax = Math.max(1, Math.round(years*12));
+    const r = (annualRatePct/100)/12;
+    const basePI = mortgagePayment(principal, annualRatePct, years);
+
+    let bal = principal;
+    let interestTotal = 0;
+    let month = 0;
+
+    // If extraPaymentsPerYear is set, distribute them evenly across the year:
+    // ex: 1 -> every 12 months, 2 -> every 6 months, 3 -> every 4 months, etc.
+    const epY = Math.max(0, Math.floor(o.extraPaymentsPerYear||0));
+    const intervalY = (epY>0) ? Math.max(1, Math.round(12/epY)) : 0;
+
+    const epM = Math.max(0, Math.floor(o.extraPaymentsPerMonth||0));
+
+    while (bal > 0 && month < 1000*12){
+      month++;
+
+      const interest = (r>0) ? bal*r : 0;
+      interestTotal += interest;
+
+      let payment = basePI + Math.max(0, o.extraPrincipalMonthly||0);
+
+      // Per-month extra full payments
+      if (epM > 0){
+        payment += basePI * epM;
+      }
+
+      // Per-year extra full payments
+      if (intervalY > 0 && (month % intervalY === 0)){
+        payment += basePI;
+      }
+
+      // Apply payment to principal
+      let principalPay = payment - interest;
+      if (principalPay < 0) principalPay = 0;
+      if (principalPay > bal) principalPay = bal;
+      bal -= principalPay;
+
+      // Stop if we'd exceed the original term, but allow early payoff
+      if (month > nMax && bal <= 0) break;
+    }
+
+    return { months: month, interest: interestTotal, basePI };
+  }
+
+  function ymFromMonths(m){
+    const y = Math.floor(m/12);
+    const mo = m % 12;
+    return `${y}y ${mo}m`;
+  }
+
+  function updatePayoffUI(inputs, buy){
+    // Needs a valid loan amount
+    const principal = buy?.snapshot?.loan ?? 0;
+    if (!Number.isFinite(principal) || principal <= 0) return;
+
+    const base = amortizePayoff(principal, inputs.mortgageRate, inputs.mortgageYears, {});
+    const byMonthly = amortizePayoff(principal, inputs.mortgageRate, inputs.mortgageYears, {
+      extraPrincipalMonthly: num("extraPrinMonthly", 0),
+      extraPaymentsPerYear: 0,
+      extraPaymentsPerMonth: 0
+    });
+    const byYear = amortizePayoff(principal, inputs.mortgageRate, inputs.mortgageYears, {
+      extraPrincipalMonthly: 0,
+      extraPaymentsPerYear: num("extraPaysPerYear", 0),
+      extraPaymentsPerMonth: 0
+    });
+    const byMonth = amortizePayoff(principal, inputs.mortgageRate, inputs.mortgageYears, {
+      extraPrincipalMonthly: 0,
+      extraPaymentsPerYear: 0,
+      extraPaymentsPerMonth: num("extraPaysPerMonth", 0)
+    });
+
+    // Base
+    el("poBaseTime").textContent = ymFromMonths(base.months);
+    el("poBaseInt").textContent = formatC0(base.interest);
+
+    function fill(row, res){
+      const mSaved = Math.max(0, base.months - res.months);
+      const iSaved = Math.max(0, base.interest - res.interest);
+      el(row+"Time").textContent = ymFromMonths(res.months);
+      el(row+"Int").textContent = formatC0(res.interest);
+      el(row+"TimeSaved").textContent = (mSaved>0) ? ymFromMonths(mSaved) : "–";
+      el(row+"IntSaved").textContent = (iSaved>0) ? formatC0(iSaved) : "–";
+    }
+
+    fill("poMonthly", byMonthly);
+    fill("poYear", byYear);
+    fill("poMonth", byMonth);
+  }
+  // -------------------------------------------------------------------------
+
+  function getPmiAnnualRate(downPct, creditProfile){
+    if (downPct >= 20) return 0;
+    return (CONFIG.pmiRates[creditProfile] ?? CONFIG.pmiRates.good);
+  }
+
+  function oppCost(cashOutflow, tYears, invRateDec, horizonYears){
+    if (cashOutflow <= 0 || invRateDec <= 0 || horizonYears <= tYears) return 0;
+    const p = horizonYears - tYears;
+    return cashOutflow * (Math.pow(1+invRateDec, p) - 1);
+  }
+
+  function homeValueAt(price, annualGrowthPct, years){
+    return price * Math.pow(1 + (annualGrowthPct/100), years);
+  }
+
+  function simulateBuy(inputs){
+    const monthsTotal = Math.max(1, Math.round(inputs.yearsTotal * 12));
+    const monthsLive = Math.max(1, Math.round(inputs.yearsLiveIn * 12));
+    const monthsToConvert = Math.min(monthsLive, monthsTotal);
+    const invRate = inputs.investReturn/100;
+    const horizonYears = monthsTotal/12;
+
+    const buyClose = (inputs.buyClosePct/100) * inputs.homePrice;
+    const downAmt = inputs.downAmt;
+    const originalLoan = Math.max(0, inputs.homePrice - downAmt);
+    const monthlyPI = mortgagePayment(originalLoan, inputs.mortgageRate, inputs.mortgageYears);
+    const monthlyR = (inputs.mortgageRate/100)/12;
+
+    const pmiAnnualRate = getPmiAnnualRate(inputs.downPct, inputs.creditProfile);
+    const pmiMonthlyBase = (pmiAnnualRate/100) * originalLoan / 12;
+
+    let initialCosts = downAmt + buyClose;
+    let recurringCosts = 0;
+    let opportunity = 0;
+    let taxBenefits = 0;
+    let netRentalCashFlow = 0;
+
+    opportunity += oppCost(downAmt, 0, invRate, horizonYears);
+    opportunity += oppCost(buyClose, 0, invRate, horizonYears);
+
+    let balance = originalLoan;
+    let homeValue = inputs.homePrice;
+
+    const interestByYear = [];
+    const propTaxByYear = [];
+
+    function ensureYear(y){
+      if (!interestByYear[y]) interestByYear[y]=0;
+      if (!propTaxByYear[y]) propTaxByYear[y]=0;
+    }
+
+    for (let m=0; m<monthsTotal; m++){
+      const tYears = m/12;
+      const y = Math.floor(m/12);
+      ensureYear(y);
+
+      if (m>0 && m%12===0){
+        homeValue *= (1 + inputs.homeGrowth/100);
+      }
+
+      const inLiveIn = (m < monthsToConvert);
+      const rentalMode = (inputs.enableRentalMode === "yes");
+      if (!rentalMode && m >= monthsToConvert) break;
+
+      let interest = (balance>0 && monthlyR>0) ? balance * monthlyR : 0;
+      let principalPay = monthlyPI - interest;
+      if (principalPay < 0) principalPay = 0;
+      if (principalPay > balance) principalPay = balance;
+      balance -= principalPay;
+
+      interestByYear[y] += interest;
+
+      const propTaxM = (homeValue * (inputs.propTaxRate/100))/12;
+      propTaxByYear[y] += propTaxM;
+
+      const hoaM = inputs.hoaMonthly;
+
+      let pmiM = 0;
+      if (pmiAnnualRate > 0 && inputs.homePrice > 0){
+        const ltvOrig = balance / inputs.homePrice;
+        if (ltvOrig > CONFIG.pmiDropLtv) pmiM = pmiMonthlyBase;
+      }
+
+      const insM = (inLiveIn ? inputs.homeInsAnnual : inputs.landlordInsAnnual) / 12;
+
+      const maintRateUse = inLiveIn ? inputs.maintRate : inputs.repairsRateRental;
+      const maintM = (homeValue * (maintRateUse/100))/12;
+
+      const utilsM = inLiveIn ? inputs.extraOwnUtils : 0;
+
+      const ownerOutflow =
+        monthlyPI + pmiM + propTaxM + insM + hoaM + maintM + utilsM;
+
+      recurringCosts += ownerOutflow;
+      opportunity += oppCost(ownerOutflow, tYears,  invRate, horizonYears);
+
+      if (!inLiveIn && rentalMode){
+        const yearsSinceConvert = (m - monthsToConvert)/12;
+        const rentNow = inputs.rentOutMonthly * Math.pow(1 + inputs.rentOutGrowth/100, yearsSinceConvert);
+
+        const vacancyLoss = rentNow * (inputs.vacancyRate/100);
+        const collected = Math.max(0, rentNow - vacancyLoss);
+        const mgmtFee = collected * (inputs.mgmtRate/100);
+        const netRentCollected = Math.max(0, collected - mgmtFee);
+
+        netRentalCashFlow += netRentCollected;
+        opportunity -= oppCost(netRentCollected, tYears, invRate, horizonYears);
+      }
+    }
+
+    const stdDed = inputs.stdDed;
+    for (let y=0; y<interestByYear.length; y++){
+      const housingDed = (interestByYear[y]||0) + (propTaxByYear[y]||0);
+      const itemized = housingDed + inputs.otherItemized;
+      const extra = Math.max(0, itemized - stdDed);
+      taxBenefits += extra * (inputs.margTax/100);
+    }
+
+    let netProceeds = 0;
+    let proceedsLabel = "";
+
+    if (inputs.enableRentalMode === "no"){
+      const yearsAtSale = monthsToConvert/12;
+      const saleValue = homeValueAt(inputs.homePrice, inputs.homeGrowth, yearsAtSale);
+      const sellCosts = (inputs.sellCostPct/100) * saleValue;
+      netProceeds = Math.max(0, saleValue - sellCosts - balance);
+      proceedsLabel = `Sale at move-out (~${yearsAtSale.toFixed(1).replace(/\.0$/,"")} yrs)`;
+    } else {
+      const yearsAtEnd = inputs.yearsTotal;
+      const endValue = homeValueAt(inputs.homePrice, inputs.homeGrowth, yearsAtEnd);
+      const sellCosts = (inputs.sellCostPct/100) * endValue;
+      netProceeds = Math.max(0, endValue - sellCosts - balance);
+      proceedsLabel = `Net-if-sold at horizon (${yearsAtEnd.toFixed(1).replace(/\.0$/,"")} yrs)`;
+    }
+
+    const totalWealthImpact =
+      initialCosts + recurringCosts + opportunity - netProceeds - taxBenefits - netRentalCashFlow;
+
+    // Snapshot components (starting month)
+    const snapPropTaxM = (inputs.homePrice * (inputs.propTaxRate/100))/12;
+    const snapHomeInsM = inputs.homeInsAnnual/12;
+    const snapHoaM = inputs.hoaMonthly;
+    const snapUtilsM = inputs.extraOwnUtils;
+
+    const snapPmiM = (pmiAnnualRate>0) ? pmiMonthlyBase : 0;
+    const snapTotal = monthlyPI + snapPmiM + snapPropTaxM + snapHomeInsM + snapHoaM + snapUtilsM;
+
+    return {
+      initialCosts, recurringCosts, opportunity, taxBenefits, netRentalCashFlow, netProceeds, proceedsLabel,
+      totalWealthImpact,
+      snapshot: {
+        loan: originalLoan,
+        monthlyPI,
+        monthlyPMI: snapPmiM,
+        monthlyPropTax: snapPropTaxM,
+        monthlyHomeIns: snapHomeInsM,
+        monthlyHOA: snapHoaM,
+        monthlyUtils: snapUtilsM,
+        monthlyTotal: snapTotal,
+        pmiAnnualRate
+      },
+      end: { balance }
+    };
+  }
+
+  function simulateRent(inputs){
+    const monthsTotal = Math.max(1, Math.round(inputs.yearsTotal * 12));
+    const invRate = inputs.investReturn/100;
+    const horizonYears = monthsTotal/12;
+
+    let initialCosts = 0;
+    let recurringCosts = 0;
+    let opportunity = 0;
+
+    const rentersInsAnnual = 300;
+    const depositMonths = 1;
+
+    let rentM = inputs.monthlyRent;
+    const deposit = depositMonths * rentM;
+
+    initialCosts += deposit;
+    opportunity += oppCost(deposit, 0, invRate, horizonYears);
+
+    for (let m=0; m<monthsTotal; m++){
+      const tYears = m/12;
+      if (m>0 && m%12===0) rentM *= (1 + inputs.rentGrowth/100);
+
+      const insM = rentersInsAnnual/12;
+      const utilsM = inputs.extraRentUtils;
+
+      const out = rentM + insM + utilsM;
+      recurringCosts += out;
+      opportunity += oppCost(out, tYears, invRate, horizonYears);
+    }
+
+    const netProceeds = deposit;
+    const totalWealthImpact = initialCosts + recurringCosts + opportunity - netProceeds;
+    return { initialCosts, recurringCosts, opportunity, netProceeds, totalWealthImpact };
+  }
+
+  let lock = false;
+
+  function syncDownFromPct(){
+    if (lock) return;
+    const price = num("homePrice", CONFIG.defaults.homePrice);
+    const pct = clamp(num("downPct", CONFIG.defaults.downPct), 0, 100);
+    const amt = clamp((pct/100)*price, 0, price);
+    lock = true;
+    el("downAmt").value = Math.round(amt);
+    lock = false;
+  }
+
+  function syncDownFromAmt(){
+    if (lock) return;
+    const price = num("homePrice", CONFIG.defaults.homePrice);
+    const amtRaw = num("downAmt", (CONFIG.defaults.downPct/100)*price);
+    const amt = clamp(amtRaw, 0, price);
+    const pct = price>0 ? (amt/price)*100 : 0;
+    lock = true;
+    el("downAmt").value = Math.round(amt);
+    el("downPct").value = pct.toFixed(1);
+    lock = false;
+  }
+
+  function collectInputs(){
+    const homePrice = num("homePrice", CONFIG.defaults.homePrice);
+    const downPct = clamp(num("downPct", CONFIG.defaults.downPct), 0, 100);
+    const downAmt = clamp(num("downAmt", (downPct/100)*homePrice), 0, homePrice);
+
+    const filing = el("filing").value;
+    const stdDedDefault = (filing === "joint") ? CONFIG.defaults.stdDedJoint : CONFIG.defaults.stdDedIndividual;
+
+    return {
+      homePrice,
+      monthlyRent: num("monthlyRent", CONFIG.defaults.monthlyRent),
+      yearsTotal: Math.max(1, num("yearsTotal", CONFIG.defaults.yearsTotal)),
+      yearsLiveIn: clamp(num("yearsLiveIn", CONFIG.defaults.yearsLiveIn), 0.5, 100),
+      mortgageRate: num("mortgageRate", CONFIG.defaults.mortgageRate),
+      mortgageYears: Math.max(5, num("mortgageYears", CONFIG.defaults.mortgageYears)),
+      downPct,
+      downAmt,
+      creditProfile: el("creditProfile").value,
+
+      enableRentalMode: el("enableRentalMode").value,
+
+      rentOutMonthly: num("rentOutMonthly", CONFIG.defaults.rentOutMonthly),
+      vacancyRate: clamp(num("vacancyRate", CONFIG.defaults.vacancyRate), 0, 50),
+      mgmtRate: clamp(num("mgmtRate", CONFIG.defaults.mgmtRate), 0, 20),
+      landlordInsAnnual: num("landlordInsAnnual", CONFIG.defaults.landlordInsAnnual),
+      repairsRateRental: num("repairsRateRental", CONFIG.defaults.repairsRateRental),
+      rentOutGrowth: num("rentOutGrowth", CONFIG.defaults.rentOutGrowth),
+
+      homeGrowth: num("homeGrowth", CONFIG.defaults.homeGrowth),
+      rentGrowth: num("rentGrowth", CONFIG.defaults.rentGrowth),
+      investReturn: num("investReturn", CONFIG.defaults.investReturn),
+      inflation: num("inflation", CONFIG.defaults.inflation),
+
+      propTaxRate: num("propTaxRate", CONFIG.defaults.propTaxRate),
+      maintRate: num("maintRate", CONFIG.defaults.maintRate),
+      homeInsAnnual: num("homeInsAnnual", CONFIG.defaults.homeInsAnnual),
+      hoaMonthly: num("hoaMonthly", CONFIG.defaults.hoaMonthly),
+      extraOwnUtils: num("extraOwnUtils", CONFIG.defaults.extraOwnUtils),
+      extraRentUtils: num("extraRentUtils", CONFIG.defaults.extraRentUtils),
+
+      buyClosePct: num("buyClosePct", CONFIG.defaults.buyClosePct),
+      sellCostPct: num("sellCostPct", CONFIG.defaults.sellCostPct),
+
+      filing,
+      margTax: num("margTax", CONFIG.defaults.margTax),
+      stdDed: num("stdDed", stdDedDefault),
+      otherItemized: num("otherItemized", CONFIG.defaults.otherItemized)
+    };
+  }
+
+  function formatC0(x){ return Number.isFinite(x) ? fmt0.format(Math.round(x)) : "–"; }
+
+  // We keep last calc for export
+  let LAST = null;
+
+  function updateUI(buy, rent, inputs){
+    // Mortgage snapshot
+    el("mLoan").textContent = formatC0(buy.snapshot.loan);
+    el("mPI").textContent = fmt0.format(buy.snapshot.monthlyPI);
+    el("mPropTax").textContent = fmt0.format(buy.snapshot.monthlyPropTax);
+    el("mHomeIns").textContent = fmt0.format(buy.snapshot.monthlyHomeIns);
+    el("mHOA").textContent = fmt0.format(buy.snapshot.monthlyHOA);
+    el("mUtils").textContent = fmt0.format(buy.snapshot.monthlyUtils);
+
+    if (buy.snapshot.monthlyPMI > 0){
+      el("mPMI").textContent = fmt0.format(buy.snapshot.monthlyPMI) + ` (≈${buy.snapshot.pmiAnnualRate.toFixed(2)}%/yr of loan)`;
+    } else {
+      el("mPMI").textContent = "None (20%+ down or PMI assumed off)";
+    }
+    el("mTotal").textContent = formatC0(buy.snapshot.monthlyTotal);
+
+    const buyTotal = buy.totalWealthImpact;
+    const rentTotal = rent.totalWealthImpact;
+
+    el("buyTotal").textContent = formatC0(buyTotal);
+    el("rentTotal").textContent = formatC0(rentTotal);
+    el("buyTotalTbl").textContent = formatC0(buyTotal);
+    el("rentTotalTbl").textContent = formatC0(rentTotal);
+
+    el("buyInit").textContent = formatC0(buy.initialCosts);
+    el("rentInit").textContent = formatC0(rent.initialCosts);
+    el("buyRec").textContent = formatC0(buy.recurringCosts);
+    el("rentRec").textContent = formatC0(rent.recurringCosts);
+    el("buyTax").textContent = (buy.taxBenefits>0) ? ("-" + formatC0(buy.taxBenefits)) : formatC0(0);
+    el("buyOpp").textContent = formatC0(buy.opportunity);
+    el("rentOpp").textContent = formatC0(rent.opportunity);
+
+    const rentalCF = buy.netRentalCashFlow;
+    el("buyRentCF").textContent = (inputs.enableRentalMode==="yes")
+      ? ("-" + formatC0(rentalCF))
+      : "n/a";
+
+    el("buyProceeds").textContent = "-" + formatC0(buy.netProceeds) + ` (${buy.proceedsLabel})`;
+    el("rentProceeds").textContent = "-" + formatC0(rent.netProceeds);
+
+    const diff = rentTotal - buyTotal;
+    const abs = Math.abs(diff);
+
+    const yrsT = inputs.yearsTotal.toFixed(1).replace(/\.0$/,"");
+    const yrsL = inputs.yearsLiveIn.toFixed(1).replace(/\.0$/,"");
+    const modeLine = (inputs.enableRentalMode==="yes")
+      ? `We buy now, live in it for ~${yrsL} years, then rent it out and hold it through the ${yrsT}-year horizon.`
+      : `We buy now, live in it for ~${yrsL} years, then sell when we move out.`;
+
+    el("modeNote").textContent = modeLine;
+
+    if (!Number.isFinite(buyTotal) || !Number.isFinite(rentTotal)){
+      el("verdict").textContent = "Need valid inputs";
+      el("verdictSub").textContent = "Check home price, rent, years, and mortgage rate.";
+    } else if (abs < 1){
+      el("verdict").textContent = `Basically a tie over ~${yrsT} years`;
+      el("verdictSub").textContent = "Small assumption changes can swing this either way.";
+    } else if (diff > 0){
+      el("verdict").textContent = `Buying looks better by ~${formatC0(abs)}`;
+      el("verdictSub").textContent = (inputs.enableRentalMode==="yes")
+        ? "Rental cash flow after move-out is helping the buy option."
+        : "Equity build + proceeds are helping the buy option.";
+    } else {
+      el("verdict").textContent = `Renting looks better by ~${formatC0(abs)}`;
+      el("verdictSub").textContent = (inputs.enableRentalMode==="yes")
+        ? "The rental cash flow isn’t enough to overcome other costs under these assumptions."
+        : "The buy costs and opportunity cost outweigh equity under these assumptions.";
+    }
+
+    const maxT = Math.max(buyTotal, rentTotal, 1);
+    el("barBuy").style.width = Math.max(5, Math.min(100, (buyTotal/maxT)*100)) + "%";
+    el("barRent").style.width = Math.max(5, Math.min(100, (rentTotal/maxT)*100)) + "%";
+
+    el("buySub").textContent =
+      (inputs.enableRentalMode==="yes")
+        ? `Includes net rental cash flow of ~${formatC0(rentalCF)} after move-out.`
+        : `Assumes sale at move-out and counts net proceeds.`;
+    el("rentSub").textContent = "Rent for the full horizon (simple baseline).";
+
+    // store for export
+    LAST = { inputs, buy, rent, verdict: el("verdict").textContent, verdictSub: el("verdictSub").textContent, modeLine, timestamp: nowStamp() };
+  }
+
+  function recalc(){
+    const inputs = collectInputs();
+    if (inputs.yearsLiveIn > inputs.yearsTotal){
+      el("yearsLiveIn").value = inputs.yearsTotal;
+    }
+    const buy = simulateBuy(collectInputs());
+    const rent = simulateRent(collectInputs());
+    updateUI(buy, rent, collectInputs());
+    updatePayoffUI(collectInputs(), buy);
+    updateRentCostsUI();
+  }
+
+  /* ---------- EXPORT HELPERS ---------- */
+  function safe(v){ return (v===null || v===undefined) ? "" : String(v); }
+  function pct(v){ return `${Number(v).toFixed(2)}%`; }
+
+  function buildSummaryText(){
+    if (!LAST) return "No scenario calculated yet.";
+    const { inputs, buy, rent, verdict, verdictSub, modeLine, timestamp } = LAST;
+
+    const lines = [];
+    lines.push("Rent vs Buy (For Us) – Scenario Export");
+    lines.push(`Timestamp: ${timestamp}`);
+    lines.push("");
+    lines.push("Verdict");
+    lines.push(`- ${verdict}`);
+    lines.push(`- ${verdictSub}`);
+    lines.push(`- Plan: ${modeLine}`);
+    lines.push("");
+    lines.push("Key Results (Total Wealth Impact, lower is better)");
+    lines.push(`- Buy total: ${fmt0.format(buy.totalWealthImpact)}`);
+    lines.push(`- Rent total: ${fmt0.format(rent.totalWealthImpact)}`);
+    lines.push(`- Difference (rent - buy): ${fmt0.format(rent.totalWealthImpact - buy.totalWealthImpact)}`);
+    lines.push("");
+
+    lines.push("Inputs – Basics");
+    lines.push(`- Home price: ${fmt0.format(inputs.homePrice)}`);
+    lines.push(`- Monthly rent: ${fmt0.format(inputs.monthlyRent)}`);
+    lines.push(`- Horizon: ${inputs.yearsTotal} years`);
+    lines.push(`- Live-in years: ${inputs.yearsLiveIn} years`);
+    lines.push(`- Mortgage rate: ${inputs.mortgageRate}%`);
+    lines.push(`- Mortgage term: ${inputs.mortgageYears} years`);
+    lines.push(`- Down payment: ${inputs.downPct}% (${fmt0.format(inputs.downAmt)})`);
+    lines.push(`- Credit profile: ${inputs.creditProfile}`);
+    lines.push("");
+
+    lines.push("Inputs – Rental Asset Mode");
+    lines.push(`- Keep as rental after move-out: ${inputs.enableRentalMode}`);
+    lines.push(`- Starting rent when rented out: ${fmt0.format(inputs.rentOutMonthly)}/mo`);
+    lines.push(`- Vacancy loss: ${inputs.vacancyRate}%`);
+    lines.push(`- Management fee: ${inputs.mgmtRate}%`);
+    lines.push(`- Landlord insurance: ${fmt0.format(inputs.landlordInsAnnual)}/yr`);
+    lines.push(`- Repairs/CapEx reserve: ${inputs.repairsRateRental}% of value/yr`);
+    lines.push(`- Rental growth: ${inputs.rentOutGrowth}%/yr`);
+    lines.push("");
+
+    lines.push("Inputs – Advanced Assumptions");
+    lines.push(`- Home price growth: ${inputs.homeGrowth}%/yr`);
+    lines.push(`- Rent growth: ${inputs.rentGrowth}%/yr`);
+    lines.push(`- Investment return (opp cost): ${inputs.investReturn}%/yr`);
+    lines.push(`- Inflation: ${inputs.inflation}%/yr`);
+    lines.push(`- Property tax: ${inputs.propTaxRate}% of value/yr`);
+    lines.push(`- Maintenance (live-in): ${inputs.maintRate}% of value/yr`);
+    lines.push(`- Homeowner insurance: ${fmt0.format(inputs.homeInsAnnual)}/yr`);
+    lines.push(`- HOA: ${fmt0.format(inputs.hoaMonthly)}/mo`);
+    lines.push(`- Extra utilities (own): ${fmt0.format(inputs.extraOwnUtils)}/mo`);
+    lines.push(`- Extra utilities (rent): ${fmt0.format(inputs.extraRentUtils)}/mo`);
+    lines.push(`- Buy closing costs: ${inputs.buyClosePct}% of price`);
+    lines.push(`- Sell costs: ${inputs.sellCostPct}% of sale`);
+    lines.push("");
+
+    lines.push("Inputs – Simplified Taxes");
+    lines.push(`- Filing: ${inputs.filing}`);
+    lines.push(`- Marginal tax rate: ${inputs.margTax}%`);
+    lines.push(`- Standard deduction: ${fmt0.format(inputs.stdDed)}`);
+    lines.push(`- Other itemized deductions: ${fmt0.format(inputs.otherItemized)}`);
+    lines.push("");
+
+    lines.push("Mortgage Snapshot (Starting Month)");
+    lines.push(`- Loan amount: ${fmt0.format(buy.snapshot.loan)}`);
+    lines.push(`- Principal & interest: ${fmt2.format(buy.snapshot.monthlyPI)}/mo`);
+    lines.push(`- PMI estimate: ${fmt2.format(buy.snapshot.monthlyPMI)}/mo (≈${buy.snapshot.pmiAnnualRate.toFixed(2)}%/yr of loan)`);
+    lines.push(`- Property tax (est.): ${fmt2.format(buy.snapshot.monthlyPropTax)}/mo`);
+    lines.push(`- Homeowner insurance: ${fmt2.format(buy.snapshot.monthlyHomeIns)}/mo`);
+    lines.push(`- HOA: ${fmt2.format(buy.snapshot.monthlyHOA)}/mo`);
+    lines.push(`- Extra utilities: ${fmt2.format(buy.snapshot.monthlyUtils)}/mo`);
+    lines.push(`- Total monthly housing: ${fmt2.format(buy.snapshot.monthlyTotal)}/mo`);
+    lines.push("");
+
+    lines.push("Buy Scenario Breakdown (Totals over horizon)");
+    lines.push(`- Initial costs: ${fmt0.format(buy.initialCosts)}`);
+    lines.push(`- Recurring costs: ${fmt0.format(buy.recurringCosts)}`);
+    lines.push(`- Opportunity cost: ${fmt0.format(buy.opportunity)}`);
+    lines.push(`- Tax benefits: ${fmt0.format(buy.taxBenefits)}`);
+    lines.push(`- Net rental cash flow: ${fmt0.format(buy.netRentalCashFlow)}`);
+    lines.push(`- Net proceeds: ${fmt0.format(buy.netProceeds)} (${buy.proceedsLabel})`);
+    lines.push(`- Remaining mortgage balance (end): ${fmt0.format(buy.end.balance)}`);
+    lines.push("");
+
+    lines.push("Rent Scenario Breakdown (Totals over horizon)");
+    lines.push(`- Initial costs: ${fmt0.format(rent.initialCosts)} (security deposit assumed refundable)`);
+    lines.push(`- Recurring costs: ${fmt0.format(rent.recurringCosts)}`);
+    lines.push(`- Opportunity cost: ${fmt0.format(rent.opportunity)}`);
+    lines.push(`- Net proceeds: ${fmt0.format(rent.netProceeds)} (deposit return)`);
+    lines.push("");
+
+    lines.push("Notes / Simplifications");
+    lines.push("- No data is stored. Inputs are “as of today”.");
+    lines.push("- Taxes are simplified (single marginal rate, standard deduction threshold).");
+    lines.push("- Rental cash flow is treated as pre-tax (simple model).");
+    lines.push("- PMI is a simple estimate and may differ from lender quotes.");
+    return lines.join("\n");
+  }
+
+  function downloadBlob(filename, mime, content){
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function buildWordHtml(){
+    const t = buildSummaryText();
+    const safeHtml = t
+      .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+      .replace(/\n/g,"<br>");
+    return `
+      <html>
+        <head><meta charset="utf-8"><title>Rent vs Buy Export</title></head>
+        <body style="font-family:Calibri, Arial, sans-serif; line-height:1.35;">
+          <h2 style="margin:0 0 8px;">Rent vs Buy (For Us) – Scenario Export</h2>
+          <div style="font-size:12pt;">${safeHtml}</div>
+        </body>
+      </html>
+    `.trim();
+  }
+
+  async function downloadPdf(){
+    if (!window.jspdf || !window.jspdf.jsPDF){
+      alert("PDF library failed to load. Check your internet connection (CDN).");
+      return;
+    }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit:"pt", format:"letter" });
+
+    const text = buildSummaryText();
+    const margin = 40;
+    const maxWidth = 535;
+    const lineHeight = 14;
+
+    let y = margin;
+    doc.setFont("helvetica","normal");
+    doc.setFontSize(11);
+
+    const paragraphs = text.split("\n");
+    for (const p of paragraphs){
+      const lines = doc.splitTextToSize(p, maxWidth);
+      for (const line of lines){
+        if (y > 760){
+          doc.addPage();
+          y = margin;
+        }
+        doc.text(line, margin, y);
+        y += lineHeight;
+      }
+      y += 4; // extra spacing between paragraphs
+    }
+
+    doc.save("rent-vs-buy-analysis.pdf");
+  }
+
+  function wireExports(){
+    el("exportTxt").addEventListener("click", () => {
+      const t = buildSummaryText();
+      downloadBlob("rent-vs-buy-analysis.txt", "text/plain;charset=utf-8", t);
+    });
+
+    el("exportDoc").addEventListener("click", () => {
+      const html = buildWordHtml();
+      downloadBlob("rent-vs-buy-analysis.doc", "application/msword;charset=utf-8", html);
+    });
+
+    el("exportPdf").addEventListener("click", downloadPdf);
+  }
+  /* ---------- END EXPORT HELPERS ---------- */
+
+  function loadDefaults(){
+    const d = CONFIG.defaults;
+    el("homePrice").value = d.homePrice;
+    el("monthlyRent").value = d.monthlyRent;
+    el("yearsTotal").value = d.yearsTotal;
+    el("yearsLiveIn").value = d.yearsLiveIn;
+
+    el("mortgageRate").value = d.mortgageRate;
+    el("mortgageYears").value = d.mortgageYears;
+
+    lock = true;
+    el("downPct").value = d.downPct;
+    lock = false;
+    syncDownFromPct();
+
+    el("creditProfile").value = d.creditProfile;
+
+    el("enableRentalMode").value = d.enableRentalMode;
+    el("rentOutMonthly").value = d.rentOutMonthly;
+    el("vacancyRate").value = d.vacancyRate;
+    el("mgmtRate").value = d.mgmtRate;
+    el("landlordInsAnnual").value = d.landlordInsAnnual;
+    el("repairsRateRental").value = d.repairsRateRental;
+    el("rentOutGrowth").value = d.rentOutGrowth;
+
+    el("homeGrowth").value = d.homeGrowth;
+    el("rentGrowth").value = d.rentGrowth;
+    el("investReturn").value = d.investReturn;
+    el("inflation").value = d.inflation;
+
+    el("propTaxRate").value = d.propTaxRate;
+    el("maintRate").value = d.maintRate;
+    el("homeInsAnnual").value = d.homeInsAnnual;
+    el("hoaMonthly").value = d.hoaMonthly;
+    el("extraOwnUtils").value = d.extraOwnUtils;
+    el("extraRentUtils").value = d.extraRentUtils;
+
+    el("buyClosePct").value = d.buyClosePct;
+    el("sellCostPct").value = d.sellCostPct;
+
+    el("filing").value = d.filing;
+    el("margTax").value = d.margTax;
+    el("stdDed").value = d.stdDed;
+    el("otherItemized").value = d.otherItemized;
+
+    // Payoff accelerator defaults
+    el("extraPrinMonthly").value = d.extraPrinMonthly;
+    el("extraPaysPerYear").value = d.extraPaysPerYear;
+    el("extraPaysPerMonth").value = d.extraPaysPerMonth;
+
+    // Rent costs builder defaults
+    el("rentFirstMonth").value = d.rentFirstMonth;
+    el("rentLastMonth").value = d.rentLastMonth;
+    el("rentDepositMonths").value = d.rentDepositMonths;
+    el("rentBrokerPct").value = d.rentBrokerPct;
+    el("rentAppFees").value = d.rentAppFees;
+    el("rentMoveCosts").value = d.rentMoveCosts;
+    el("rentPetDeposit").value = d.rentPetDeposit;
+    el("rentOtherUpfront").value = d.rentOtherUpfront;
+    el("rentUtilities").value = d.rentUtilities;
+    el("rentLandscaping").value = d.rentLandscaping;
+    el("rentPest").value = d.rentPest;
+    el("rentParking").value = d.rentParking;
+    el("rentPetMonthly").value = d.rentPetMonthly;
+    el("rentStorage").value = d.rentStorage;
+    el("rentMiscMonthly").value = d.rentMiscMonthly;
+    el("rentersInsAnnual").value = d.rentersInsAnnual;
+
+    recalc();
+  }
+
+
+  // -----------------------------
+  // Tabs (dashboard-style sections)
+  // -----------------------------
+  function setActiveTab(tab){
+    const tabs = document.querySelectorAll(".tab");
+    tabs.forEach(b => {
+      const on = b.dataset.tab === tab;
+      b.classList.toggle("active", on);
+      b.setAttribute("aria-selected", on ? "true" : "false");
+    });
+
+    // Panels on the right side
+    const assumptions = el("assumptionsPanel");
+    const rental = el("rentalBlock");
+    const mortgage = el("mortgageSnapshotBlock");
+    const payoff = el("payoffBlock");
+    const rentCosts = el("rentCostsBlock");
+    const results = el("resultsSection");
+
+    // Hide all non-dashboard panels by default
+    [assumptions, rental, mortgage, payoff, rentCosts].forEach(x => x && x.classList.add("hidden"));
+
+    // Results live only on dashboard
+    if (results) results.classList.toggle("hidden", tab !== "dashboard");
+
+    // Show selected panel
+    if (tab === "assumptions") assumptions && assumptions.classList.remove("hidden");
+    if (tab === "rentalAsset") rental && rental.classList.remove("hidden");
+    if (tab === "mortgage") mortgage && mortgage.classList.remove("hidden");
+    if (tab === "payoff") payoff && payoff.classList.remove("hidden");
+    if (tab === "rentCosts") rentCosts && rentCosts.classList.remove("hidden");
+
+    recalc();
+  }
+
+  function initTabs(){
+    const buttons = document.querySelectorAll(".tab");
+    buttons.forEach(b => b.addEventListener("click", () => setActiveTab(b.dataset.tab)));
+    setActiveTab("dashboard");
+  }
+
+  // -----------------------------
+  // Rent costs builder (side calc)
+  // -----------------------------
+  function calcGrowingSeriesMonthly(baseMonthly, annualGrowthPct, years){
+    // Sums monthly payments with a simple step-up once per year.
+    // Year 0 uses baseMonthly. At year 1, baseMonthly*(1+g), etc.
+    const g = annualGrowthPct/100;
+    const totalMonths = Math.max(0, Math.round(years * 12));
+    let total = 0;
+    for (let m = 0; m < totalMonths; m++){
+      const yr = Math.floor(m/12);
+      const monthly = baseMonthly * Math.pow(1+g, yr);
+      total += monthly;
+    }
+    return total;
+  }
+
+  function updateRentCostsUI(){
+    const block = el("rentCostsBlock");
+    if (!block) return;
+
+    const rent = num("monthlyRent", 0);
+    const years = num("yearsTotal", 0);
+    const rentGrowth = num("rentGrowth", 0);
+    const inflation = num("inflation", 0);
+
+    const firstMonth = el("rentFirstMonth").value === "yes" ? rent : 0;
+    const lastMonth = el("rentLastMonth").value === "yes" ? rent : 0;
+    const depMonths = Math.max(0, num("rentDepositMonths", 0));
+    const deposit = rent * depMonths;
+
+    const brokerPct = Math.max(0, num("rentBrokerPct", 0));
+    const brokerFee = (brokerPct/100) * (rent * 12);
+
+    const appFees = Math.max(0, num("rentAppFees", 0));
+    const moveCosts = Math.max(0, num("rentMoveCosts", 0));
+    const petDeposit = Math.max(0, num("rentPetDeposit", 0));
+    const otherUpfront = Math.max(0, num("rentOtherUpfront", 0));
+
+    const upfront = firstMonth + lastMonth + deposit + brokerFee + appFees + moveCosts + petDeposit + otherUpfront;
+
+    const utilities = Math.max(0, num("rentUtilities", 0));
+    const landscaping = Math.max(0, num("rentLandscaping", 0));
+    const pest = Math.max(0, num("rentPest", 0));
+    const parking = Math.max(0, num("rentParking", 0));
+    const petMonthly = Math.max(0, num("rentPetMonthly", 0));
+    const storage = Math.max(0, num("rentStorage", 0));
+    const misc = Math.max(0, num("rentMiscMonthly", 0));
+    const rentersInsAnnual = Math.max(0, num("rentersInsAnnual", 0));
+
+    const addOnsBase = utilities + landscaping + pest + parking + petMonthly + storage + misc + (rentersInsAnnual/12);
+
+    // Total rent over horizon with rent growth
+    const totalRent = calcGrowingSeriesMonthly(rent, rentGrowth, years);
+
+    // Add-ons inflated using inflation (kept simple and adjustable)
+    const totalAddOns = calcGrowingSeriesMonthly(addOnsBase, inflation, years);
+
+    // Deposit is assumed returned, so it is NOT counted in total paid.
+    // Upfront costs excluding deposit:
+    const upfrontAsCost = upfront - deposit;
+
+    const totalPaid = upfrontAsCost + totalRent + totalAddOns;
+
+    const rcUpfront = el("rcUpfront");
+    const rcMonthlyAdd = el("rcMonthlyAdd");
+    const rcAllIn = el("rcAllInMonthly");
+    const rcTotal = el("rcTotalHorizon");
+
+    if (rcUpfront) rcUpfront.textContent = formatCurrency(upfront);
+    if (rcMonthlyAdd) rcMonthlyAdd.textContent = formatCurrency(addOnsBase);
+    if (rcAllIn) rcAllIn.textContent = formatCurrency(rent + addOnsBase);
+    if (rcTotal) rcTotal.textContent = `${formatCurrency(totalPaid)} (deposit assumed returned)`;
+  }
+
+  
+  // -----------------------------
+  // Persistence (localStorage)
+  // Default: ON (per your request)
+  // Stores ONLY form inputs on this device. No network calls.
+  // -----------------------------
+  const PERSIST = { ok: false, restored: false, lastSaved: null };
+  let saveTimer = null;
+
+  function storageAvailable(){
+    try{
+      const k="__rvb_test__";
+      localStorage.setItem(k,"1");
+      localStorage.removeItem(k);
+      return true;
+    }catch(e){ return false; }
+  }
+
+  function updateSavedStatus(tsIso){
+    const node = el("savedStatus");
+    if(!node) return;
+    if(!PERSIST.ok){
+      node.textContent = "Saving is disabled in this browser/session.";
+      return;
+    }
+    if(!tsIso){
+      node.textContent = "Not saved yet.";
+      return;
+    }
+    const d = new Date(tsIso);
+    node.textContent = "Last saved: " + d.toLocaleString();
+  }
+
+  function serializeState(){
+    const data = {};
+    const nodes = document.querySelectorAll("input, select, textarea");
+    nodes.forEach(n => {
+      if(!n.id) return;
+      if(n.id === "clearSavedBtn" || n.id === "savedStatus") return;
+      if(n.type === "checkbox") data[n.id] = !!n.checked;
+      else data[n.id] = n.value;
+    });
+    return data;
+  }
+
+  function applyState(data){
+    if(!data) return;
+    const nodes = document.querySelectorAll("input, select, textarea");
+    nodes.forEach(n => {
+      if(!n.id) return;
+      if(!(n.id in data)) return;
+      if(n.type === "checkbox") n.checked = !!data[n.id];
+      else n.value = data[n.id];
+    });
+  }
+
+  function saveStateNow(){
+    if(!PERSIST.ok) return;
+    const toggle = el("rememberToggle");
+    if(toggle && !toggle.checked) return;
+
+    const payload = {
+      v: 1,
+      savedAt: new Date().toISOString(),
+      data: serializeState()
+    };
+    try{
+      localStorage.setItem(CONFIG.storage.key, JSON.stringify(payload));
+      PERSIST.lastSaved = payload.savedAt;
+      updateSavedStatus(payload.savedAt);
+    }catch(e){
+      // If storage quota is blocked or exceeded, just stop trying quietly.
+      PERSIST.ok = false;
+      updateSavedStatus(null);
+    }
+  }
+
+  function scheduleSave(){
+    if(!PERSIST.ok) return;
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(saveStateNow, 250);
+  }
+
+  function clearSaved(){
+    if(!PERSIST.ok) return;
+    try{ localStorage.removeItem(CONFIG.storage.key); }catch(e){}
+    PERSIST.lastSaved = null;
+    updateSavedStatus(null);
+  }
+
+  // Returns true if state restored
+  function initPersistence(){
+    PERSIST.ok = storageAvailable();
+
+    const toggle = el("rememberToggle");
+    const clearBtn = el("clearSavedBtn");
+
+    if(toggle){
+      toggle.checked = !!CONFIG.storage.enabledByDefault;
+      toggle.addEventListener("change", () => {
+        if(!toggle.checked){
+          clearSaved();
+        }else{
+          saveStateNow();
+        }
+      });
+    }
+    if(clearBtn){
+      clearBtn.addEventListener("click", () => {
+        clearSaved();
+        // Also reset to defaults so the UI and storage don't fight.
+        loadDefaults();
+      });
+    }
+
+    if(!PERSIST.ok){
+      if(toggle){ toggle.checked = false; toggle.disabled = true; }
+      if(clearBtn){ clearBtn.disabled = true; }
+      updateSavedStatus(null);
+      return false;
+    }
+
+    // Try to restore previously saved state (only if rememberToggle was ON in that saved state).
+    const raw = localStorage.getItem(CONFIG.storage.key);
+    if(raw){
+      try{
+        const payload = JSON.parse(raw);
+        if(payload && payload.data){
+          const rememberWasOn = !!payload.data.rememberToggle;
+          if(toggle) toggle.checked = rememberWasOn;
+          if(rememberWasOn){
+            applyState(payload.data);
+            PERSIST.lastSaved = payload.savedAt || null;
+            updateSavedStatus(PERSIST.lastSaved);
+            return true;
+          }
+        }
+      }catch(e){ /* ignore */ }
+    }
+
+    updateSavedStatus(null);
+    return false;
+  }
+
+  function bind(){
+    el("toggleAdv").addEventListener("click", () => setActiveTab("assumptions"));
+el("downPct").addEventListener("input", () => { syncDownFromPct(); recalc(); scheduleSave(); });
+    el("downAmt").addEventListener("input", () => { syncDownFromAmt(); recalc(); scheduleSave(); });
+    el("homePrice").addEventListener("input", () => { syncDownFromPct(); recalc(); scheduleSave(); });
+
+    // Bind recalc to every input/select on the page (avoids stale hard-coded id lists).
+    // NOTE: Some fields (down payment %) sync with $ amount, but recalc is safe to call for both.
+    const fields = document.querySelectorAll("input, select, textarea");
+    fields.forEach(node => {
+      const evt = (node.type === "checkbox" || node.tagName === "SELECT") ? "change" : "input";
+      node.addEventListener(evt, () => { recalc(); scheduleSave(); });
+      // Also listen to input for selects/checkboxes in case some browsers fire differently
+      if (evt !== "input") node.addEventListener("input", () => { recalc(); scheduleSave(); });
+      if (evt !== "change") node.addEventListener("change", () => { recalc(); scheduleSave(); });
+    });
+if (typeof ids !== "undefined") ids.forEach(id => el(id).addEventListener("change", () => { recalc(); scheduleSave(); }));
+
+    el("resetBtn").addEventListener("click", loadDefaults);
+
+    wireExports();
+  }
+
+  function updateSnapshotFieldsFromModel(buy, inputs){
+    // Values already computed inside simulateBuy and used in updateUI, this function stays simple by design.
+    // (Kept here as a placeholder if you want to break snapshot into more UI pieces later.)
+  }
+
+  function updateUIWrapper(){
+    const inputs = collectInputs();
+    if (inputs.yearsLiveIn > inputs.yearsTotal){
+      el("yearsLiveIn").value = inputs.yearsTotal;
+    }
+    const buy = simulateBuy(collectInputs());
+    const rent = simulateRent(collectInputs());
+    updateUI(buy, rent, collectInputs());
+    updatePayoffUI(collectInputs(), buy);
+    updateRentCostsUI();
+  }
+
+  function updateUI(buy, rent, inputs){
+    // Mortgage snapshot
+    el("mLoan").textContent = formatC0(buy.snapshot.loan);
+    el("mPI").textContent = fmt0.format(buy.snapshot.monthlyPI);
+    el("mPropTax").textContent = fmt0.format(buy.snapshot.monthlyPropTax);
+    el("mHomeIns").textContent = fmt0.format(buy.snapshot.monthlyHomeIns);
+    el("mHOA").textContent = fmt0.format(buy.snapshot.monthlyHOA);
+    el("mUtils").textContent = fmt0.format(buy.snapshot.monthlyUtils);
+
+    if (buy.snapshot.monthlyPMI > 0){
+      el("mPMI").textContent = fmt0.format(buy.snapshot.monthlyPMI) + ` (≈${buy.snapshot.pmiAnnualRate.toFixed(2)}%/yr of loan)`;
+    } else {
+      el("mPMI").textContent = "None (20%+ down or PMI assumed off)";
+    }
+    el("mTotal").textContent = formatC0(buy.snapshot.monthlyTotal);
+
+    const buyTotal = buy.totalWealthImpact;
+    const rentTotal = rent.totalWealthImpact;
+
+    el("buyTotal").textContent = formatC0(buyTotal);
+    el("rentTotal").textContent = formatC0(rentTotal);
+    el("buyTotalTbl").textContent = formatC0(buyTotal);
+    el("rentTotalTbl").textContent = formatC0(rentTotal);
+
+    el("buyInit").textContent = formatC0(buy.initialCosts);
+    el("rentInit").textContent = formatC0(rent.initialCosts);
+    el("buyRec").textContent = formatC0(buy.recurringCosts);
+    el("rentRec").textContent = formatC0(rent.recurringCosts);
+    el("buyTax").textContent = (buy.taxBenefits>0) ? ("-" + formatC0(buy.taxBenefits)) : formatC0(0);
+    el("buyOpp").textContent = formatC0(buy.opportunity);
+    el("rentOpp").textContent = formatC0(rent.opportunity);
+
+    const rentalCF = buy.netRentalCashFlow;
+    el("buyRentCF").textContent = (inputs.enableRentalMode==="yes")
+      ? ("-" + formatC0(rentalCF))
+      : "n/a";
+
+    el("buyProceeds").textContent = "-" + formatC0(buy.netProceeds) + ` (${buy.proceedsLabel})`;
+    el("rentProceeds").textContent = "-" + formatC0(rent.netProceeds);
+
+    const diff = rentTotal - buyTotal;
+    const abs = Math.abs(diff);
+
+    const yrsT = inputs.yearsTotal.toFixed(1).replace(/\.0$/,"");
+    const yrsL = inputs.yearsLiveIn.toFixed(1).replace(/\.0$/,"");
+    const modeLine = (inputs.enableRentalMode==="yes")
+      ? `We buy now, live in it for ~${yrsL} years, then rent it out and hold it through the ${yrsT}-year horizon.`
+      : `We buy now, live in it for ~${yrsL} years, then sell when we move out.`;
+
+    el("modeNote").textContent = modeLine;
+
+    if (!Number.isFinite(buyTotal) || !Number.isFinite(rentTotal)){
+      el("verdict").textContent = "Need valid inputs";
+      el("verdictSub").textContent = "Check home price, rent, years, and mortgage rate.";
+    } else if (abs < 1){
+      el("verdict").textContent = `Basically a tie over ~${yrsT} years`;
+      el("verdictSub").textContent = "Small assumption changes can swing this either way.";
+    } else if (diff > 0){
+      el("verdict").textContent = `Buying looks better by ~${formatC0(abs)}`;
+      el("verdictSub").textContent = (inputs.enableRentalMode==="yes")
+        ? "Rental cash flow after move-out is helping the buy option."
+        : "Equity build + proceeds are helping the buy option.";
+    } else {
+      el("verdict").textContent = `Renting looks better by ~${formatC0(abs)}`;
+      el("verdictSub").textContent = (inputs.enableRentalMode==="yes")
+        ? "The rental cash flow isn’t enough to overcome other costs under these assumptions."
+        : "The buy costs and opportunity cost outweigh equity under these assumptions.";
+    }
+
+    const maxT = Math.max(buyTotal, rentTotal, 1);
+    el("barBuy").style.width = Math.max(5, Math.min(100, (buyTotal/maxT)*100)) + "%";
+    el("barRent").style.width = Math.max(5, Math.min(100, (rentTotal/maxT)*100)) + "%";
+
+    el("buySub").textContent =
+      (inputs.enableRentalMode==="yes")
+        ? `Includes net rental cash flow of ~${formatC0(rentalCF)} after move-out.`
+        : `Assumes sale at move-out and counts net proceeds.`;
+    el("rentSub").textContent = "Rent for the full horizon (simple baseline).";
+
+    LAST = { inputs, buy, rent, verdict: el("verdict").textContent, verdictSub: el("verdictSub").textContent, modeLine, timestamp: nowStamp() };
+  }
+
+  function recalc(){ updateUIWrapper(); }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    initTabs();
+    bind();
+    const restored = initPersistence();
+    if(!restored){
+      loadDefaults();
+    }else{
+      // Ensure dependent fields and results are fresh after restore
+      recalc();
+    }
+  });
+})();
+</script>
+<!-- Register Service Worker -->
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker
+        .register("./service-worker.js")
+        .catch(err => console.error("SW registration failed:", err));
+    });
+  }
+</script>
+</body>
+</html>
