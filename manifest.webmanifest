@@ -1,8 +1,8 @@
 {
   "name": "Paul's Rent vs Buy",
   "short_name": "Rent vs Buy",
-  "start_url": ".",
-  "scope": ".",
+  "start_url": "/pauls-rent-vs-buy/",
+  "scope": "/pauls-rent-vs-buy/"
   "display": "standalone",
   "background_color": "#f5f5f7",
   "theme_color": "#2563eb",

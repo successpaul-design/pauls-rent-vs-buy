@@ -1,15 +1,15 @@
 // PWA Service Worker (polished)
-const VERSION = "v1";
+const VERSION = "v4";
 const CACHE_NAME = `prvb-cache-${VERSION}`;
 
 const CORE_ASSETS = [
-  "./",
-  "./index.html",
-  "./manifest.webmanifest",
-  "./service-worker.js",
-  "./icons/icon-192.png",
-  "./icons/icon-512.png",
-  "./icons/apple-touch-icon-180.png"
+  "/pauls-rent-vs-buy/",
+  "/pauls-rent-vs-buy/index.html",
+  "/pauls-rent-vs-buy/manifest.webmanifest",
+  "/pauls-rent-vs-buy/service-worker.js",
+  "/pauls-rent-vs-buy/icons/icon-192.png",
+  "/pauls-rent-vs-buy/icons/icon-512.png",
+  "/pauls-rent-vs-buy/icons/apple-touch-icon-180.png"
 ];
 
 self.addEventListener("install", (event) => {
